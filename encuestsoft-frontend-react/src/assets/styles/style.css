@@ -1193,6 +1193,7 @@ input:focus-visible,
     margin-bottom: 1.2rem;
   }
 }
+
 /* ---------- Movimiento reducido (preferencia del usuario, WCAG 2.3.3) ---------- */
 body.a11y-reduced-motion *,
 body.a11y-reduced-motion *::before,
@@ -1201,27 +1202,133 @@ body.a11y-reduced-motion *::after {
   transition: none !important;
   scroll-behavior: auto !important;
 }
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ---------- Constructor de formularios ---------- */
-.builder-panel { background: var(--white); border: 1px solid var(--border); border-radius: .6rem; padding: 1rem; }
-.palette-item { display: flex; align-items: center; width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--border); border-radius: .4rem; padding: .5rem .7rem; cursor: grab; font-size: .9rem; color: var(--ink); }
-.palette-item:hover { border-color: var(--gold-dark); background: #fff8d8; }
-.field-card { display: flex; align-items: center; gap: .5rem; border: 1px solid var(--border); border-radius: .5rem; padding: .5rem .6rem; background: var(--white); }
-.field-card.selected { border-color: #1E5B8A; box-shadow: 0 0 0 2px rgba(30, 91, 138, .35); }
-.field-card-main { flex: 1; text-align: left; background: none; border: 0; padding: .25rem; color: var(--ink); }
-.field-card-actions { display: flex; gap: .25rem; }
-.field-card-actions .action-btn:disabled { opacity: .35; cursor: not-allowed; }
-.drag-handle { color: var(--muted); cursor: grab; }
-.drop-zone { height: .6rem; border-radius: .3rem; transition: height .12s; }
-.drop-zone.over { height: 2.6rem; background: #e7f1fa; border: 2px dashed #1E5B8A; }
-.drop-zone.empty { height: auto; padding: 2rem 1rem; text-align: center; color: var(--muted); border: 2px dashed var(--border); }
-.bar-track { background: #e9e9e9; border-radius: .3rem; height: .6rem; overflow: hidden; }
-.bar-fill { background: #1E5B8A; height: 100%; }
-.nav-logout { color: inherit; text-decoration: none; font-weight: 600; padding: 0; }
+.builder-panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: .6rem;
+  padding: 1rem;
+}
+
+.palette-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: .4rem;
+  padding: .5rem .7rem;
+  cursor: grab;
+  font-size: .9rem;
+  color: var(--ink);
+}
+
+.palette-item:hover {
+  border-color: var(--gold-dark);
+  background: #fff8d8;
+}
+
+.field-card {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  padding: .5rem .6rem;
+  background: var(--white);
+}
+
+.field-card.selected {
+  border-color: #1E5B8A;
+  box-shadow: 0 0 0 2px rgba(30, 91, 138, .35);
+}
+
+.field-card-main {
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: .25rem;
+  color: var(--ink);
+}
+
+.field-card-actions {
+  display: flex;
+  gap: .25rem;
+}
+
+.field-card-actions .action-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.drag-handle {
+  color: var(--muted);
+  cursor: grab;
+}
+
+.drop-zone {
+  height: .6rem;
+  border-radius: .3rem;
+  transition: height .12s;
+}
+
+.drop-zone.over {
+  height: 2.6rem;
+  background: #e7f1fa;
+  border: 2px dashed #1E5B8A;
+}
+
+.drop-zone.empty {
+  height: auto;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  border: 2px dashed var(--border);
+}
+
+.bar-track {
+  background: #e9e9e9;
+  border-radius: .3rem;
+  height: .6rem;
+  overflow: hidden;
+}
+
+.bar-fill {
+  background: #1E5B8A;
+  height: 100%;
+}
+
+.nav-logout {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0;
+}
+
 /* Foco visible consistente (WCAG 2.4.7) */
-:focus-visible { outline: 3px solid #1E5B8A; outline-offset: 2px; }
-body.a11y-contrast :focus-visible { outline-color: #FFF200; }
-main:focus { outline: none; }
+:focus-visible {
+  outline: 3px solid #1E5B8A;
+  outline-offset: 2px;
+}
+
+body.a11y-contrast :focus-visible {
+  outline-color: #FFF200;
+}
+
+main:focus {
+  outline: none;
+}
