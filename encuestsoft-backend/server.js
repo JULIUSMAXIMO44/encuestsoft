@@ -1,25 +1,51 @@
-const app = require('./app');
-const { sequelize, testConnection } = require('./config/database');
-const logger = require('./utils/logger');
 
-const PORT = process.env.PORT || 4000;
+const { Sequelize } = require('sequelize');
+require('dotenv').config();
 
-async function start() {
-  await testConnection();
-
-  // En desarrollo, sincroniza modelos automáticamente. En producción se
-  // recomienda usar el schema.sql / migraciones versionadas (ver database/).
-  if (process.env.NODE_ENV !== 'production') {
-    await sequelize.sync({ alter: false });
-    logger.info('Modelos sincronizados con la base de datos (modo desarrollo).');
-  }
-
-  app.listen(PORT, () => {
-    logger.info(`🚀 ENCUESTSOFT backend escuchando en el puerto ${PORT} (${process.env.NODE_ENV || 'development'})`);
-  });
+if (!process.env.DATABASE_URL) {
+  throw new Error('Falta configurar la variable DATABASE_URL');
 }
 
-start().catch((err) => {
-  logger.error(`No se pudo iniciar el servidor: ${err.message}`);
-  process.exit(1);
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+
+  logging: process.env.DB_LOGGING === 'true' ? console.log : false,
+
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
+
+  define: {
+    underscored: true,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  },
+
+  pool: {
+    max: parseInt(process.env.DB_POOL_MAX || '5', 10),
+    min: parseInt(process.env.DB_POOL_MIN || '0', 10),
+    acquire: 30000,
+    idle: 10000,
+  },
+
+  timezone: '-05:00',
 });
+
+async function testConnection() {
+  try {
+    await sequelize.authenticate();
+    console.log('Conexión a PostgreSQL establecida correctamente.');
+  } catch (error) {
+    console.error(
+      'No se pudo conectar a PostgreSQL:',
+      error.message
+    );
+    throw error;
+  }
+}
+
+module.exports = { sequelize, testConnection };
