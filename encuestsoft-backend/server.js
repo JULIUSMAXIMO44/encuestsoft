@@ -1,51 +1,45 @@
-
-const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('Falta configurar la variable DATABASE_URL');
-}
+const app = require('./app');
+const { sequelize, testConnection } = require('./config/database');
+const logger = require('./utils/logger');
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
+const PORT = Number(process.env.PORT) || 4000;
 
-  logging: process.env.DB_LOGGING === 'true' ? console.log : false,
+async function start() {
+  await testConnection();
 
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
-
-  define: {
-    underscored: true,
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-  },
-
-  pool: {
-    max: parseInt(process.env.DB_POOL_MAX || '5', 10),
-    min: parseInt(process.env.DB_POOL_MIN || '0', 10),
-    acquire: 30000,
-    idle: 10000,
-  },
-
-  timezone: '-05:00',
-});
-
-async function testConnection() {
-  try {
-    await sequelize.authenticate();
-    console.log('Conexión a PostgreSQL establecida correctamente.');
-  } catch (error) {
-    console.error(
-      'No se pudo conectar a PostgreSQL:',
-      error.message
-    );
-    throw error;
+  // En desarrollo se sincronizan los modelos. En producción, las tablas
+  // se crean mediante npm run db:init antes de iniciar el servicio.
+  if (process.env.NODE_ENV !== 'production') {
+    await sequelize.sync({ alter: false });
+    logger.info('Modelos sincronizados (modo desarrollo).');
   }
+
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    logger.info(
+      `ENCUESTSOFT backend escuchando en el puerto ${PORT} (${process.env.NODE_ENV || 'development'}).`
+    );
+  });
+
+  const shutdown = async (signal) => {
+    logger.info(`Señal ${signal} recibida. Cerrando servidor...`);
+    server.close(async () => {
+      try {
+        await sequelize.close();
+        process.exit(0);
+      } catch (error) {
+        logger.error(`Error cerrando la conexión: ${error.message}`);
+        process.exit(1);
+      }
+    });
+  };
+
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+  process.once('SIGINT', () => shutdown('SIGINT'));
 }
 
-module.exports = { sequelize, testConnection };
+start().catch((error) => {
+  logger.error(`No se pudo iniciar ENCUESTSOFT: ${error.message}`);
+  process.exit(1);
+});
