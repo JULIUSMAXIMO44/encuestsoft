@@ -1,4 +1,5 @@
 
+
 const { sequelize, User, Organization } = require('./models');
 
 const usuarios = [
@@ -37,9 +38,12 @@ const usuarios = [
 async function seed() {
   try {
     await sequelize.authenticate();
-    console.log('Conexión a MySQL establecida.');
 
-    const organizationId = Number(process.env.SEED_ORGANIZATION_ID);
+    console.log('Conexión a PostgreSQL establecida.');
+
+    const organizationId = Number(
+      process.env.SEED_ORGANIZATION_ID
+    );
 
     if (!Number.isInteger(organizationId) || organizationId <= 0) {
       throw new Error(
@@ -65,6 +69,8 @@ async function seed() {
         continue;
       }
 
+      // User.create ejecuta automáticamente beforeCreate.
+      // bcryptjs genera el hash con 12 rondas de salt.
       await User.create({
         ...datos,
         organization_id: organization.id,
@@ -72,12 +78,12 @@ async function seed() {
         is_active: true,
       });
 
-      console.log(`Usuario creado: ${datos.email}`);
+      console.log(`Usuario creado correctamente: ${datos.email}`);
     }
 
     console.log('Proceso de precarga finalizado.');
   } catch (error) {
-    console.error('Error durante la precarga:', error.message);
+    console.error('Error durante la precarga:', error);
     process.exitCode = 1;
   } finally {
     await sequelize.close();
