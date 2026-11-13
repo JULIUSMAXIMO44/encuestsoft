@@ -1,37 +1,61 @@
 /**
- * Inicializa la base de datos: crea el esquema (schema.sql) y siembra los
- * planes SaaS por defecto (seed.sql). Ejecutar con: npm run db:init
+ * Inicializa Neon/PostgreSQL: crea las tablas y carga los planes SaaS.
+ * Ejecutar desde encuestsoft-backend: npm run db:init
+ *
+ * Requiere DATABASE_URL configurada en el entorno.
  */
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const mysql = require('mysql2/promise');
+const { Client } = require('pg');
 
 async function run() {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    multipleStatements: true,
+  if (!process.env.DATABASE_URL) {
+    throw new Error('Falta configurar DATABASE_URL.');
+  }
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 15000,
   });
 
-  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-  const seed = fs.readFileSync(path.join(__dirname, 'seed.sql'), 'utf8');
+  try {
+    await client.connect();
+    await client.query('BEGIN');
 
-  console.log('⏳ Creando esquema de base de datos...');
-  await connection.query(schema);
-  console.log('✅ Esquema creado.');
+    const schema = fs.readFileSync(
+      path.join(__dirname, 'schema.postgres.sql'),
+      'utf8'
+    );
+    const seed = fs.readFileSync(
+      path.join(__dirname, 'seed.postgres.sql'),
+      'utf8'
+    );
 
-  console.log('⏳ Insertando datos iniciales (planes SaaS)...');
-  await connection.query(seed);
-  console.log('✅ Datos iniciales listos.');
+    console.log('Creando esquema PostgreSQL...');
+    await client.query(schema);
+    console.log('Esquema PostgreSQL creado.');
 
-  await connection.end();
-  console.log('🎉 Base de datos ENCUESTSOFT inicializada correctamente.');
+    console.log('Insertando planes SaaS...');
+    await client.query(seed);
+    console.log('Planes SaaS listos.');
+
+    await client.query('COMMIT');
+    console.log('ENCUESTSOFT inicializado correctamente en PostgreSQL.');
+  } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (_) {
+      // Conserva el error original.
+    }
+    console.error('Error inicializando PostgreSQL:', error.message);
+    throw error;
+  } finally {
+    await client.end();
+  }
 }
 
-run().catch((err) => {
-  console.error('❌ Error inicializando la base de datos:', err.message);
+run().catch(() => {
   process.exit(1);
 });

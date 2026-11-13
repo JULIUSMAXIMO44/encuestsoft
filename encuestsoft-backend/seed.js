@@ -37,22 +37,18 @@ const usuarios = [
 async function seed() {
   try {
     await sequelize.authenticate();
-    console.log('Conexión a MySQL establecida.');
+    console.log('Conexión a PostgreSQL establecida correctamente.');
 
     const organizationId = Number(process.env.SEED_ORGANIZATION_ID);
 
     if (!Number.isInteger(organizationId) || organizationId <= 0) {
-      throw new Error(
-        'Configura SEED_ORGANIZATION_ID con el ID de una organización existente.'
-      );
+      throw new Error('Configura SEED_ORGANIZATION_ID con el ID de una organización existente.');
     }
 
     const organization = await Organization.findByPk(organizationId);
 
     if (!organization) {
-      throw new Error(
-        `No existe la organización con ID ${organizationId}.`
-      );
+      throw new Error(`No existe la organización con ID ${organizationId}.`);
     }
 
     for (const datos of usuarios) {
@@ -60,24 +56,36 @@ async function seed() {
         where: { email: datos.email },
       });
 
-      if (existente) {
-        console.log(`Ya existe: ${datos.email}. Se omite.`);
+      if (!existente) {
+        await User.create({
+          ...datos,
+          organization_id: organization.id,
+          locale: 'es',
+          is_active: true,
+        });
+
+        console.log(`Usuario creado: ${datos.email}`);
         continue;
       }
 
-      await User.create({
-        ...datos,
-        organization_id: organization.id,
-        locale: 'es',
-        is_active: true,
-      });
+      const passwordCorrecta = await existente.comparePassword(
+        datos.password_hash
+      );
 
-      console.log(`Usuario creado: ${datos.email}`);
+      if (!passwordCorrecta) {
+        await existente.update({
+          password_hash: datos.password_hash,
+        });
+
+        console.log(`Contraseña actualizada con bcrypt: ${datos.email}`);
+      } else {
+        console.log(`Usuario y contraseña verificados: ${datos.email}`);
+      }
     }
 
-    console.log('Proceso de precarga finalizado.');
+    console.log('Proceso de precarga finalizado correctamente.');
   } catch (error) {
-    console.error('Error durante la precarga:', error.message);
+    console.error('Error durante la precarga:', error);
     process.exitCode = 1;
   } finally {
     await sequelize.close();
@@ -85,3 +93,4 @@ async function seed() {
 }
 
 seed();
+

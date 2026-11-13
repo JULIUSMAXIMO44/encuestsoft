@@ -1,38 +1,44 @@
+
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'encuestsoft',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
-  {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    dialect: process.env.DB_DIALECT || 'mysql',
-    logging: process.env.DB_LOGGING === 'true' ? console.log : false,
-    define: {
-      underscored: true,
-      timestamps: true,
-      createdAt: 'created_at',
-      updatedAt: 'updated_at',
+if (!process.env.DATABASE_URL) {
+  throw new Error('Falta configurar DATABASE_URL');
+}
+
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  logging: process.env.DB_LOGGING === 'true'
+    ? console.log
+    : false,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
     },
-    pool: {
-      max: parseInt(process.env.DB_POOL_MAX || '10', 10),
-      min: parseInt(process.env.DB_POOL_MIN || '0', 10),
-      acquire: 30000,
-      idle: 10000,
-    },
-    timezone: '-05:00',
-  }
-);
+  },
+  define: {
+    underscored: true,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  },
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000,
+  },
+  timezone: '-05:00',
+});
 
 async function testConnection() {
   try {
     await sequelize.authenticate();
-    console.log('✅ Conexión a MySQL establecida correctamente.');
+    console.log('✅ Conexión a PostgreSQL establecida correctamente.');
   } catch (error) {
-    console.error('❌ No se pudo conectar a la base de datos:', error.message);
-    process.exit(1);
+    console.error('❌Error conectando a PostgreSQL:', error.message);
+    throw error;
   }
 }
 
